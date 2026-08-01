@@ -1,5 +1,10 @@
 # Template Changelog
 
+## 2026-08-02
+
+- Changed: Paperclip pin `v2026.416.0` → `v2026.722.0` (latest stable at bump time; routine upstream uptake across ~3 months of releases). **Upgrade note:** upstream releases in this range add many additive DB migrations (including Connections v3 / MCP gateway foundations); they run automatically on startup. Existing instances that set a static `PAPERCLIP_API_KEY` to override the harness run token should stop — that override no longer applies (see [v2026.722.0 upgrade guide](https://github.com/paperclipai/paperclip/releases/tag/v2026.722.0)).
+- Changed: Runtime image parity with upstream production Dockerfile — install `@google/gemini-cli` and set `GEMINI_SANDBOX=false` (alongside existing OpenCode / Codex / Claude tooling).
+
 ## 2026-04-17
 
 - Fixed: WebSocket proxy upstream errors no longer crash the Node process (#6, duplicate #7) — `http-proxy` can pass a socket on WS failures, which has no `writeHead`; the wrapper now sends JSON 503 only for HTTP responses and destroys the socket otherwise.
