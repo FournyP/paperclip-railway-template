@@ -60,9 +60,21 @@ Set these on the **Paperclip** service in Railway (template editor or service Va
 
 Optional (for AI agents):
 
-- **`OPENAI_API_KEY`** — If set, the wrapper runs Codex login at startup so agents using the Codex adapter work. You can also run Codex login from the setup page. Without it, the app and dashboard work; agents that use Codex will fail until the key is set and login is run.
+- **`OPENAI_API_KEY`** — If set, the wrapper runs Codex login at startup so agents using the Codex adapter work. You can also run Codex login from the setup page. Without it, the app and dashboard work; agents that use Codex will fail until the key is set and login is run. Also used by OpenCode when you add OpenAI-compatible providers.
 
 - **`ANTHROPIC_API_KEY`** — Used by the Claude adapter. Optional; add when you want Claude-based agents.
+
+- **`GEMINI_API_KEY`** — Optional; used by Gemini CLI / Gemini-backed agents.
+
+### OpenCode on this template
+
+OpenCode is already installed in the image (`opencode-ai`) and `OPENCODE_ALLOW_ALL_MODELS=true` is set. To use it:
+
+1. Hire / configure an **OpenCode** (`opencode_local`) agent in the Paperclip UI.
+2. Provide provider credentials the same way you would for other adapters — typically Railway service variables such as `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or other keys OpenCode’s providers need.
+3. Extra models/platforms are configured through OpenCode’s own config under `PAPERCLIP_HOME` (the `/paperclip` volume), not through a separate OpenCode service. You do **not** need to deploy OpenCode beside this template.
+
+If a specific provider still fails after keys are set, check that agent’s run logs in Paperclip — adapter/runtime errors usually surface there rather than on `/setup`.
 
 ## Networking and storage (Railway)
 
@@ -92,7 +104,7 @@ Paperclip is **cloned while the Docker image is built**, not at container start.
 | Where | What to do |
 |-------|------------|
 | **Railway** | Add a service variable **`PAPERCLIP_REF`** with a valid tag or branch from [paperclipai/paperclip](https://github.com/paperclipai/paperclip) (often the same value as the default `PAPERCLIP_REF` in this repo’s `Dockerfile`). Railway passes service variables into the build when the Dockerfile declares matching `ARG` lines; see [Using variables at build time](https://docs.railway.com/guides/dockerfiles#using-variables-at-build-time). |
-| **Local `docker build`** | `docker build --build-arg PAPERCLIP_REF=v2026.416.0 -t paperclip-railway-template .` |
+| **Local `docker build`** | `docker build --build-arg PAPERCLIP_REF=v2026.722.0 -t paperclip-railway-template .` |
 
 If you omit `PAPERCLIP_REF`, the default in the Dockerfile is used.
 
