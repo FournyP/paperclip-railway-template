@@ -1,5 +1,14 @@
 # Template Changelog
 
+## 2026-09-05
+
+- Changed: Paperclip pin `v2026.722.0` -> `v2026.831.1`. Upstream requires Node >= 24.11.0, so both image stages move to `node:24-trixie-slim`; the build stage gains `cargo`/`rustc` and a larger heap. Migrations `0184`-`0230` apply automatically on startup.
+- Fixed: `tini` runs as PID 1. The entrypoint ends in `exec`, so node inherited PID 1 and never reaped orphaned descendants; they accumulated until the cgroup pid limit was reached.
+- Added: `CLAUDE_CODE_OAUTH_TOKEN` support, so Claude agents can authenticate with a subscription instead of `ANTHROPIC_API_KEY`. `/setup` reports the resolved auth mode and flags an API key set alongside subscription credentials.
+- Fixed: a syntax error in the `/setup` page's inline script left the page stuck at "checking...". Added `npm run check:setup-html`, which renders the page and syntax-checks each inline `<script>`.
+- Added: build tooling to the runtime image - Go, `golangci-lint`, `atlas`, `mockgen`, `make`, `@railway/cli`. Go tools install to `/usr/local/bin`; `GOPATH`, `GOMODCACHE` and `GOCACHE` point at the volume so caches survive redeploys.
+- Changed: image defaults aligned with the upstream production Dockerfile.
+
 ## 2026-08-02
 
 - Changed: Paperclip pin `v2026.416.0` → `v2026.722.0` (latest stable at bump time; routine upstream uptake across ~3 months of releases). **Upgrade note:** upstream releases in this range add many additive DB migrations (including Connections v3 / MCP gateway foundations); they run automatically on startup. Existing instances that set a static `PAPERCLIP_API_KEY` to override the harness run token should stop — that override no longer applies (see [v2026.722.0 upgrade guide](https://github.com/paperclipai/paperclip/releases/tag/v2026.722.0)).
