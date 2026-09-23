@@ -6,7 +6,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "check:setup-html": "node scripts/check-setup-html.mjs"
   },
   "dependencies": {
     "express": "^5.1.0",
