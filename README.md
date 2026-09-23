@@ -111,6 +111,32 @@ OpenCode is already installed in the image (`opencode-ai`) and `OPENCODE_ALLOW_A
 
 If a specific provider still fails after keys are set, check that agent’s run logs in Paperclip — adapter/runtime errors usually surface there rather than on `/setup`.
 
+#### Adding a custom provider or model (gateways, non-default models)
+
+There's no UI for this — Paperclip's `opencode_local` adapter reads it from environment variables. Set **`PAPERCLIP_OPENCODE_PROVIDERS`** as a Railway service variable: a JSON object in OpenCode's own [`provider`](https://opencode.ai/docs/config/) config shape, e.g. for an OpenAI-compatible gateway:
+
+```json
+{"my-gateway":{"npm":"@ai-sdk/openai-compatible","options":{"baseURL":"https://gateway.example.com/v1","apiKey":"{env:MY_GATEWAY_KEY}"},"models":{"my-model":{}}}}
+```
+
+`{env:VAR}` placeholders are expanded from Railway variables server-side before the config reaches OpenCode. Reference the resulting model as `my-gateway/my-model` in the agent's model field. Since `OPENCODE_ALLOW_ALL_MODELS=true` is set, OpenCode won't refuse a model string it doesn't already know about — but a `provider/model` pair only actually resolves at run time if that provider+model exists in this JSON.
+
+Related variables, also read straight from the environment:
+
+- **`PAPERCLIP_OPENCODE_SMALL_MODEL`** — pins the auxiliary "small" model OpenCode uses for session titles etc. Needed if your default provider (e.g. Anthropic) is repointed at a gateway that doesn't serve OpenCode's built-in default small model — otherwise title generation fails and can abort the run.
+- **`PAPERCLIP_OPENCODE_PRINT_LOGS`** — set truthy to have OpenCode's own internal logs surface on stderr in the agent's run output, for diagnosing an opaque "Unexpected server error".
+
+#### Persistent OpenCode login (instead of env-only providers)
+
+For providers OpenCode authenticates interactively (`opencode auth login` / `opencode providers login`) rather than via API key env vars: those credentials are read from `$HOME/.config/opencode` at run time — which, with this image's `HOME=/paperclip`, is `/paperclip/.config/opencode` on the Railway volume, so it survives redeploys. Set it up once over `railway ssh`:
+
+```bash
+railway ssh
+opencode auth login
+```
+
+Each agent run copies this config out before running OpenCode, so nothing here is mutated by a run — updates only happen when you log in again.
+
 ## Networking and storage (Railway)
 
 - **HTTP proxy:** Enable a public domain for the Paperclip service and set the port to **3100**.

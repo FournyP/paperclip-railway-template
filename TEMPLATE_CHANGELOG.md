@@ -2,6 +2,7 @@
 
 ## 2026-09-23
 
+- Docs: documented `PAPERCLIP_OPENCODE_PROVIDERS` (custom OpenCode providers/models as JSON, with `{env:VAR}` placeholder expansion), `PAPERCLIP_OPENCODE_SMALL_MODEL`, and `PAPERCLIP_OPENCODE_PRINT_LOGS` — these are the actual mechanism `opencode_local` reads for "add another model/platform," none of which were previously documented (#13). Also documented that persistent OpenCode logins (`opencode auth login` over `railway ssh`) land in `/paperclip/.config/opencode`, on the volume, and survive redeploys.
 - Fixed: pinned the AI adapter/tooling versions (`@anthropic-ai/claude-code`, `@openai/codex`, `opencode-ai`, `@google/gemini-cli`, `tsx`) instead of installing `@latest` at build time. Railway rebuilds this image on every deploy, so an unpinned upstream release could silently break new deployments; versions here now only change when this file does. Current pins: `claude-code@2.1.280`, `codex@0.156.1`, `opencode-ai@1.18.32`, `gemini-cli@0.60.0`, `tsx@4.23.15`.
 
 ## 2026-09-05
