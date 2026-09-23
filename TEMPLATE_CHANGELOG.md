@@ -1,5 +1,9 @@
 # Template Changelog
 
+## 2026-09-23
+
+- Fixed: pinned the AI adapter/tooling versions (`@anthropic-ai/claude-code`, `@openai/codex`, `opencode-ai`, `@google/gemini-cli`, `tsx`) instead of installing `@latest` at build time. Railway rebuilds this image on every deploy, so an unpinned upstream release could silently break new deployments; versions here now only change when this file does. Current pins: `claude-code@2.1.280`, `codex@0.156.1`, `opencode-ai@1.18.32`, `gemini-cli@0.60.0`, `tsx@4.23.15`.
+
 ## 2026-08-02
 
 - Changed: Paperclip pin `v2026.416.0` → `v2026.722.0` (latest stable at bump time; routine upstream uptake across ~3 months of releases). **Upgrade note:** upstream releases in this range add many additive DB migrations (including Connections v3 / MCP gateway foundations); they run automatically on startup. Existing instances that set a static `PAPERCLIP_API_KEY` to override the harness run token should stop — that override no longer applies (see [v2026.722.0 upgrade guide](https://github.com/paperclipai/paperclip/releases/tag/v2026.722.0)).
