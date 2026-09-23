@@ -39,6 +39,7 @@ RUN apt-get update \
     jq \
     openssh-client \
     ripgrep \
+    tini \
     && rm -rf /var/lib/apt/lists/*
 RUN corepack enable
 
@@ -54,13 +55,24 @@ COPY scripts/bootstrap-ceo.mjs /wrapper/template/bootstrap-ceo.mjs
 RUN chmod +x /wrapper/entrypoint.sh
 
 # Optional local adapters/tools parity with upstream Dockerfile.
-RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai @google/gemini-cli@latest
-RUN npm install --global --omit=dev tsx
+# Pinned (not @latest): an unpinned upstream release could break builds for
+# every new deploy of this template with no warning. Bump deliberately.
+RUN npm install --global --omit=dev \
+    @anthropic-ai/claude-code@2.1.280 \
+    @openai/codex@0.156.1 \
+    opencode-ai@1.18.32 \
+    @google/gemini-cli@0.60.0
+RUN npm install --global --omit=dev tsx@4.23.15
 RUN mkdir -p /paperclip \
     && chown -R node:node /app /paperclip /wrapper
 
 # Railway sets PORT at runtime and this process binds to it.
 # Entrypoint runs as root, fixes /paperclip volume permissions, then execs as node.
 EXPOSE 3100
-ENTRYPOINT ["/wrapper/entrypoint.sh"]
+# tini, not node, is PID 1. The entrypoint ends in `exec`, so without an init
+# node inherits PID 1 and never wait()s the orphans the kernel re-parents onto
+# it — agent runs spawn git/claude/esbuild/sh descendants that outlive their
+# leader, so they pile up as permanent zombies until the cgroup pid limit is
+# exhausted and every fork() in the container fails.
+ENTRYPOINT ["/usr/bin/tini", "--", "/wrapper/entrypoint.sh"]
 CMD ["node", "/wrapper/src/server.js"]
