@@ -55,8 +55,14 @@ COPY scripts/bootstrap-ceo.mjs /wrapper/template/bootstrap-ceo.mjs
 RUN chmod +x /wrapper/entrypoint.sh
 
 # Optional local adapters/tools parity with upstream Dockerfile.
-RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai @google/gemini-cli@latest
-RUN npm install --global --omit=dev tsx
+# Pinned (not @latest): an unpinned upstream release could break builds for
+# every new deploy of this template with no warning. Bump deliberately.
+RUN npm install --global --omit=dev \
+    @anthropic-ai/claude-code@2.1.280 \
+    @openai/codex@0.156.1 \
+    opencode-ai@1.18.32 \
+    @google/gemini-cli@0.60.0
+RUN npm install --global --omit=dev tsx@4.23.15
 RUN mkdir -p /paperclip \
     && chown -R node:node /app /paperclip /wrapper
 

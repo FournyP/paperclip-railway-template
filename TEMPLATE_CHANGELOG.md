@@ -1,5 +1,9 @@
 # Template Changelog
 
+## 2026-09-23
+
+- Fixed: pinned the AI adapter/tooling versions (`@anthropic-ai/claude-code`, `@openai/codex`, `opencode-ai`, `@google/gemini-cli`, `tsx`) instead of installing `@latest` at build time. Railway rebuilds this image on every deploy, so an unpinned upstream release could silently break new deployments; versions here now only change when this file does. Current pins: `claude-code@2.1.280`, `codex@0.156.1`, `opencode-ai@1.18.32`, `gemini-cli@0.60.0`, `tsx@4.23.15`.
+
 ## 2026-09-05
 
 - Fixed: no init process in the container. The entrypoint ends in `exec`, so node ran as PID 1 and never reaped the orphaned `git`/`claude`/`esbuild` descendants that agent runs leave behind; they accumulated as zombies until the cgroup pid limit was reached and every `fork()` failed. `tini` is now PID 1, matching the upstream Paperclip production image.
