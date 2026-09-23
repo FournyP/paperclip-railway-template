@@ -1,5 +1,12 @@
 # Template Changelog
 
+## Fork (FournyP) — on top of upstream
+
+- Changed: Paperclip pin `v2026.722.0` -> `v2026.831.1`. Upstream requires Node >= 24.11.0, so both image stages move to `node:24-trixie-slim`; the build stage gains `cargo`/`rustc` and a larger heap. Managed runtime previews keep loopback (`PAPERCLIP_MANAGED_RUNTIME_HTTPS=off`).
+- Added: `npm run check:setup-html`, which renders the `/setup` page and syntax-checks each inline `<script>`.
+- Added: build tooling to the runtime image - Go, `golangci-lint`, `atlas`, `mockgen`, `make`, `gh`, `@railway/cli@5.61.0`, `@moonshot-ai/kimi-code@2.1.0`. Go tools install to `/usr/local/bin`; `GOPATH`, `GOMODCACHE` and `GOCACHE` point at the volume so caches survive redeploys.
+- Changed: image defaults aligned with the upstream production Dockerfile.
+
 ## 2026-09-23
 
 - Docs: documented `PAPERCLIP_OPENCODE_PROVIDERS` (custom OpenCode providers/models as JSON, with `{env:VAR}` placeholder expansion), `PAPERCLIP_OPENCODE_SMALL_MODEL`, and `PAPERCLIP_OPENCODE_PRINT_LOGS` — these are the actual mechanism `opencode_local` reads for "add another model/platform," none of which were previously documented (#13). Also documented that persistent OpenCode logins (`opencode auth login` over `railway ssh`) land in `/paperclip/.config/opencode`, on the volume, and survive redeploys.
