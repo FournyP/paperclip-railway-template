@@ -145,7 +145,7 @@ Each agent run copies this config out before running OpenCode, so nothing here i
 
 ## How this template works
 
-- The **Dockerfile** builds a pinned upstream Paperclip release (`PAPERCLIP_REF` in the Dockerfile; overridable at **build** time via the same-named Railway variable or `docker build --build-arg`). It does **not** use a Docker `VOLUME` (Railway handles persistence via its volume at `/paperclip`).
+- The **Dockerfile** starts from the official Paperclip release image (`ghcr.io/paperclipai/paperclip`, pinned by tag and digest on its `FROM` line) and adds this template's wrapper and tooling, so Paperclip is not compiled during the build. It does **not** use a Docker `VOLUME` (Railway handles persistence via its volume at `/paperclip`).
 - At runtime, a small **wrapper server** runs: it starts Paperclip on an internal port, proxies requests to it, and serves the **setup UI** at `/setup` (and health at `/setup/healthz`). So you never need to run CLI bootstrap or read logs to get an invite link.
 
 ## Updating the upstream Paperclip version
@@ -156,18 +156,9 @@ The image is pinned to a specific Paperclip release. To bump to a newer upstream
 GITHUB_TOKEN=... node scripts/bump-paperclip-ref.mjs
 ```
 
-Then rebuild and redeploy.
+It rewrites the `FROM` line with the latest release tag and its image digest. Then rebuild and redeploy.
 
-### Pin a different Paperclip release (no fork)
-
-Paperclip is **cloned while the Docker image is built**, not at container start. Overriding the version is **build-time only**: set the variable, then trigger a **new build** (redeploy).
-
-| Where | What to do |
-|-------|------------|
-| **Railway** | Add a service variable **`PAPERCLIP_REF`** with a valid tag or branch from [paperclipai/paperclip](https://github.com/paperclipai/paperclip) (often the same value as the default `PAPERCLIP_REF` in this repo’s `Dockerfile`). Railway passes service variables into the build when the Dockerfile declares matching `ARG` lines; see [Using variables at build time](https://docs.railway.com/guides/dockerfiles#using-variables-at-build-time). |
-| **Local `docker build`** | `docker build --build-arg PAPERCLIP_REF=v2026.1005.0 -t paperclip-railway-template .` |
-
-If you omit `PAPERCLIP_REF`, the default in the Dockerfile is used.
+To pin a different release, edit that `FROM` line: use any version tag from the [package page](https://github.com/paperclipai/paperclip/pkgs/container/paperclip) with its digest (`docker buildx imagetools inspect ghcr.io/paperclipai/paperclip:<tag>`).
 
 ## Local test (developers)
 

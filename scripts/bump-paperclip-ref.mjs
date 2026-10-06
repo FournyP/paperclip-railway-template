@@ -2,6 +2,7 @@ import fs from "node:fs";
 
 const owner = "paperclipai";
 const repo = "paperclip";
+const image = `ghcr.io/${owner}/${repo}`;
 const token = process.env.GITHUB_TOKEN;
 
 if (!token) {
@@ -24,32 +25,43 @@ async function gh(path) {
   return res.json();
 }
 
-function readCurrentRef(dockerfile) {
-  const m = dockerfile.match(/\nARG PAPERCLIP_REF=([^\n]+)\n/);
-  return m ? m[1].trim() : null;
+// Resolve the multi-arch index digest for a tag of the official image.
+async function imageDigest(tag) {
+  const auth = await fetch(`https://ghcr.io/token?scope=repository:${owner}/${repo}:pull`);
+  if (!auth.ok) throw new Error(`ghcr token ${auth.status}`);
+  const { token: registryToken } = await auth.json();
+  const res = await fetch(`https://ghcr.io/v2/${owner}/${repo}/manifests/${tag}`, {
+    method: "HEAD",
+    headers: {
+      authorization: `Bearer ${registryToken}`,
+      accept: "application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json",
+    },
+  });
+  const digest = res.headers.get("docker-content-digest");
+  if (!res.ok || !digest) throw new Error(`No image ${image}:${tag} (HTTP ${res.status})`);
+  return digest;
 }
 
-function replaceRef(dockerfile, next) {
-  const re = /\nARG PAPERCLIP_REF=([^\n]+)\n/;
-  if (!re.test(dockerfile)) throw new Error("Could not find PAPERCLIP_REF line");
-  return dockerfile.replace(re, `\nARG PAPERCLIP_REF=${next}\n`);
-}
+const fromRe = new RegExp(`^FROM ${image.replace(/[.]/g, "\\.")}:([^@\\s]+)@(sha256:[0-9a-f]+)$`, "m");
 
 const latest = await gh(`/repos/${owner}/${repo}/releases/latest`);
 const latestTag = latest.tag_name;
 if (!latestTag) throw new Error("No tag_name in latest release response");
+const latestVersion = latestTag.replace(/^v/, "");
 
 const dockerPath = "Dockerfile";
 const docker = fs.readFileSync(dockerPath, "utf8");
-const currentRef = readCurrentRef(docker);
-if (!currentRef) throw new Error("Could not parse current PAPERCLIP_REF");
+const m = docker.match(fromRe);
+if (!m) throw new Error(`Could not find the FROM ${image} line`);
+const currentVersion = m[1];
 
-console.log(`current=${currentRef} latest=${latestTag}`);
+console.log(`current=${currentVersion} latest=${latestVersion}`);
 
-if (currentRef === latestTag) {
+if (currentVersion === latestVersion) {
   console.log("No update needed.");
   process.exit(0);
 }
 
-fs.writeFileSync(dockerPath, replaceRef(docker, latestTag));
-console.log(`Updated ${dockerPath} to ${latestTag}`);
+const digest = await imageDigest(latestVersion);
+fs.writeFileSync(dockerPath, docker.replace(fromRe, `FROM ${image}:${latestVersion}@${digest}`));
+console.log(`Updated ${dockerPath} to ${latestVersion} (${digest})`);
