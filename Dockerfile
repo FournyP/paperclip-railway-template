@@ -7,18 +7,41 @@ RUN apt-get update \
     git \
     python3 \
     wget \
-    # The server build drives a Rust target in packages/paperclip-runner
-    # (upstream added these to their build stage after v2026.722.0).
-    cargo \
-    rustc \
+    # C toolchain for the Rust build in packages/paperclip-runner.
+    gcc \
+    libc6-dev \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 RUN corepack enable
 
+# Debian's rustc is too old for the runner, so install rustup (pinned and
+# checksum-verified, same as upstream) and let the runner's
+# rust-toolchain.toml pick the compiler.
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    PATH=/usr/local/cargo/bin:$PATH
+ARG RUSTUP_VERSION=1.29.0
+ARG RUSTUP_SHA256_AMD64=4acc9acc76d5079515b46346a485974457b5a79893cfb01112423c89aeb5aa10
+ARG RUSTUP_SHA256_ARM64=9732d6c5e2a098d3521fca8145d826ae0aaa067ef2385ead08e6feac88fa5792
+RUN set -eux; \
+    arch="$(dpkg --print-architecture)"; \
+    case "$arch" in \
+      amd64) rustTarget="x86_64-unknown-linux-gnu"; sha256="$RUSTUP_SHA256_AMD64" ;; \
+      arm64) rustTarget="aarch64-unknown-linux-gnu"; sha256="$RUSTUP_SHA256_ARM64" ;; \
+      *) echo "unsupported architecture: $arch" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSLo /tmp/rustup-init "https://static.rust-lang.org/rustup/archive/${RUSTUP_VERSION}/${rustTarget}/rustup-init"; \
+    echo "${sha256}  /tmp/rustup-init" | sha256sum -c -; \
+    chmod +x /tmp/rustup-init; \
+    /tmp/rustup-init -y --no-modify-path --profile minimal --default-toolchain none; \
+    rm /tmp/rustup-init
+
 ARG PAPERCLIP_REPO=https://github.com/paperclipai/paperclip.git
-ARG PAPERCLIP_REF=v2026.831.1
+ARG PAPERCLIP_REF=v2026.1005.0
 
 WORKDIR /paperclip
 RUN git clone --depth 1 --branch "${PAPERCLIP_REF}" "${PAPERCLIP_REPO}" .
+RUN cd packages/paperclip-runner && rustup show
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @paperclipai/ui build
 RUN pnpm --filter @paperclipai/plugin-sdk build

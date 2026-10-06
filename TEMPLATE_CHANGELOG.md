@@ -2,6 +2,7 @@
 
 ## Fork (FournyP) — on top of upstream
 
+- Changed: Paperclip pin `v2026.831.1` -> `v2026.1005.0`. The runner now needs a newer Rust than Debian ships, so the build stage installs a pinned, checksum-verified rustup (as upstream does) and the runner's `rust-toolchain.toml` picks the compiler. See the upstream breaking changes for v2026.916.0, v2026.1001.0 and v2026.1005.0 before upgrading.
 - Changed: Paperclip pin `v2026.722.0` -> `v2026.831.1`. Upstream requires Node >= 24.11.0, so both image stages move to `node:24-trixie-slim`; the build stage gains `cargo`/`rustc` and a larger heap. Managed runtime previews keep loopback (`PAPERCLIP_MANAGED_RUNTIME_HTTPS=off`).
 - Added: `npm run check:setup-html`, which renders the `/setup` page and syntax-checks each inline `<script>`.
 - Added: build tooling to the runtime image - Go, `golangci-lint`, `atlas`, `mockgen`, `make`, `gh`, `@railway/cli@5.61.0`, `@moonshot-ai/kimi-code@2.1.0`. Go tools install to `/usr/local/bin`; `GOPATH`, `GOMODCACHE` and `GOCACHE` point at the volume so caches survive redeploys.
